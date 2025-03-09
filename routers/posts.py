@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Response, HTTPException, Depends, FastAPI, status
-from database import get_session, Posts
+from database import get_session, Posts, Votes
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import schemas
 from . import oauth
 
@@ -9,10 +10,13 @@ router = APIRouter(
     tags = ['posts']
 )
 
-@router.get("", response_model=list[schemas.postResponse])
+@router.get("")
 def get_post(db: Session = Depends(get_session), limit: int = 10, skip: int = 0, search: str = ''):
     posts = db.query(Posts).filter(Posts.title.contains(search)).limit(limit).offset(skip).all()
-    return posts
+
+    posts_joined = db.query(Posts, func.count(Votes.post_id).label("votes")).join(Votes, Votes.post_id == Posts.post_id, isouter=True).group_by(Posts.post_id).all()
+    print(posts_joined)
+    return posts_joined
 
 @router.post('', response_model=schemas.postResponse)
 def posting(post: schemas.PostCreate, db: Session = Depends(get_session), curr_user: Session = Depends(oauth.get_current_user)):

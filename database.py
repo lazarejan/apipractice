@@ -1,4 +1,4 @@
-from sqlalchemy import  ForeignKey, create_engine, Column, Integer, String, TIMESTAMP, Boolean
+from sqlalchemy import  ForeignKey, PrimaryKeyConstraint, UniqueConstraint, create_engine, Column, Integer, String, TIMESTAMP, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import sessionmaker, relationship
@@ -38,3 +38,9 @@ class Users(Base):
     email = Column(String, nullable=False, unique = True)
     password = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+class Votes(Base):
+    __tablename__ = "votes"
+
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"),  nullable=False, primary_key=True)
+    post_id = Column(Integer, ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=False, primary_key=True)
