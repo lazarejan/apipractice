@@ -2,7 +2,7 @@ from sqlalchemy import  ForeignKey, PrimaryKeyConstraint, UniqueConstraint, crea
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import sessionmaker, relationship
-from config import settings
+from .config import settings
 
 URL = f'postgresql://{settings.db_username}:{settings.db_pass}@{settings.db_hostname}:{settings.db_port}/{settings.db_name}'
 
@@ -38,6 +38,7 @@ class Users(Base):
     email = Column(String, nullable=False, unique = True)
     password = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    phone_number = Column(String, nullable=True)
 
 class Votes(Base):
     __tablename__ = "votes"
