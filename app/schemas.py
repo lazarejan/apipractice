@@ -28,7 +28,7 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     pass
 
-class postResponse(PostBase):
+class PostResponse(PostBase):
     post_id: int
     created_at: datetime
     owner: UserResponse
@@ -36,8 +36,9 @@ class postResponse(PostBase):
     class Config:
         from_attributes = True
 
-# class PostResponse(PostBase):
-    
+class PostOut(BaseModel):
+    Posts: PostResponse
+    votes: int
 
 # TokenModel
 class Token(BaseModel):
@@ -49,4 +50,4 @@ class TokenData(BaseModel):
 # VoteModel
 class Vote(BaseModel):
     post_id: int
-    dir: conint(le=1)
+    dir: conint(le=1) # type: ignore
