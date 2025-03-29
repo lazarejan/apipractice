@@ -10,6 +10,14 @@ router = APIRouter(
     tags = ['posts']
 )
 
+def get_full_post(db: Session, id: int):
+    '''
+    get the post in form of PostOut schema with the votes count
+    '''
+    return db.query(Posts, func.count(Votes.post_id).label("votes")).join(
+        Votes, Votes.post_id == Posts.post_id, isouter=True).filter(Posts.post_id == id).group_by(Posts.post_id).first()
+
+
 @router.get("", response_model=list[schemas.PostOut])
 def get_post(db: Session = Depends(get_session), limit: int = 10, skip: int = 0, search: str = ''):
     posts_joined = db.query(Posts, func.count(Votes.post_id).label("votes")).join(
@@ -18,6 +26,7 @@ def get_post(db: Session = Depends(get_session), limit: int = 10, skip: int = 0,
     # this solution in case you dont use schemas. when using the schema this code is not neccessery
     # results = list(map(lambda x: x._mapping, posts_joined))
     # print(results)
+    
     return posts_joined
 
 @router.post('', response_model=schemas.PostResponse)
@@ -31,8 +40,8 @@ def posting(post: schemas.PostCreate, db: Session = Depends(get_session), curr_u
 @router.get("/{id}", response_model=schemas.PostOut)
 def get_with_id(id: int, db: Session = Depends(get_session), curr_user: Session = Depends(oauth.get_current_user)):
     
-    post = db.query(Posts, func.count(Votes.post_id).label("votes")).join(
-        Votes, Votes.post_id == Posts.post_id, isouter=True).filter(Posts.post_id == id).group_by(Posts.post_id).first()
+    post = get_full_post(db, id)
+
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail = "Post with that id not found")
     return post
@@ -51,14 +60,16 @@ def deleting(id: int, db: Session = Depends(get_session), curr_user: Session = D
 
 @router.put("/{id}", response_model=schemas.PostOut)
 def updating(post: schemas.PostCreate, id: int, db: Session= Depends(get_session), curr_user: Session = Depends(oauth.get_current_user)):
-    upd_post_query = db.query(Posts, func.count(Votes.post_id).label("votes")).join(
-        Votes, Votes.post_id == Posts.post_id, isouter=True).filter(Posts.post_id == id).group_by(Posts.post_id)
+    
+    upd_post_query = db.query(Posts).filter(Posts.post_id == id)
+    
     upd_post = upd_post_query.first()
     if not upd_post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail = "Post with that id not found")
-    if curr_user.user_id != upd_post.Posts.user_id:
+    if curr_user.user_id != upd_post.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not authoriezed to perform this action")
     upd_post_query.update(post.dict(), synchronize_session=False)
     db.commit()
     db.refresh(upd_post)
-    return upd_post
+    print_upd_post = get_full_post(db, id)
+    return print_upd_post

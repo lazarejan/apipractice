@@ -12,9 +12,13 @@ router = APIRouter(
 
 @router.post('', status_code=status.HTTP_201_CREATED)
 def vote(vote: schemas.Vote, db: Session = Depends(get_session), curr_user: Session = Depends(oauth.get_current_user)):
+    '''
+    votes posts. if the vote "dir" is 1, it adds a vote. if the vote "dir" is 0, it deletes the vote.
+    '''
     post = db.query(Posts).filter(Posts.post_id == vote.post_id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, details="post not found")
+    
     vote_query = db.query(Votes).filter(Votes.post_id == vote.post_id, Votes.user_id == curr_user.user_id)
     found_vote = vote_query.first()
     if (vote.dir == 1):
